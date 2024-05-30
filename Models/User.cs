@@ -11,7 +11,7 @@ namespace MyRHApp.Models
         public int Id { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
-        public List<UserRoleContext> UserRoleContexts { get; set; } = new List<UserRoleContext>();
+        public int EmployeeId { get; set; }  // Link to Employee
     }
 
 }

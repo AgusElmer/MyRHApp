@@ -6,6 +6,7 @@ using MyRHApp.Services.Interfaces;
 using MyRHApp.Utilities;
 using MyRHApp.DataAccess.Interfaces;
 using MyRHApp.DataAccess.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MyRHApp
 {
@@ -42,19 +43,20 @@ namespace MyRHApp
 
         private static void ConfigureServices()
         {
-            DIContainer.Register<IUserRepository, UserRepository>();
-            DIContainer.Register<IUserRoleContextRepository, UserRoleContextRepository>();
-            DIContainer.Register<IRoleRepository, RoleRepository>();
-            DIContainer.Register<IEmployeeRepository, EmployeeRepository>();
-            DIContainer.Register<IContextRepository, ContextRepository>();
+            var serviceProvider = new ServiceCollection()
+            .AddSingleton<IUserRepository, UserRepository>()
+            .AddSingleton<IUserRoleContextRepository, UserRoleContextRepository>()
+            .AddSingleton<IRoleRepository, RoleRepository>()
+            .AddSingleton<IEmployeeRepository, EmployeeRepository>()
+            .AddSingleton<IContextRepository, ContextRepository>()
+            .AddSingleton<IUserService, UserService>()
+            .AddSingleton<IRoleService, RoleService>()
+            .AddSingleton<IEmployeeService, EmployeeService>()
+            .BuildServiceProvider();
 
-            DIContainer.Register<IUserService, UserService>();
-            DIContainer.Register<IRoleService, RoleService>();
-            DIContainer.Register<IEmployeeService, EmployeeService>();
-
-            _userService = DIContainer.Resolve<IUserService>();
-            _employeeService = DIContainer.Resolve<IEmployeeService>();
-            _roleService = DIContainer.Resolve<IRoleService>();
+            _userService = serviceProvider.GetService<IUserService>();
+            _employeeService = serviceProvider.GetService<IEmployeeService>();
+            _roleService = serviceProvider.GetService<IRoleService>();
         }
 
         private static void SeedData()
@@ -67,13 +69,16 @@ namespace MyRHApp
             _roleService.CreateRole(hrRole);
             _roleService.CreateRole(employeeRole);
 
-            // Create users
-            var hrUser = new HREmployee { Id = 1, Username = "hruser", Password = "password", FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
-            var generalUser = new GeneralEmployee { Id = 2, Username = "empuser", Password = "password", FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
+            // Create employees
+            var hrEmployee = new HREmployee { Id = 1, FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
+            var generalEmployee = new GeneralEmployee { Id = 2, FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
 
-            // Register users through service
-            _userService.Register(hrUser);
-            _userService.Register(generalUser);
+            // Create users with EmployeeId
+            var hrUser = new User { Id = 1, Username = "hruser", Password = "password", EmployeeId = hrEmployee.Id };
+            var generalUser = new User { Id = 2, Username = "empuser", Password = "password", EmployeeId = generalEmployee.Id };
+
+            _userService.Register(hrUser, hrEmployee);
+            _userService.Register(generalUser, generalEmployee);
 
             // Assign roles to users in context 1
             _userService.AssignRoleToUser(hrUser.Id, hrRole.Id, 1);
@@ -108,7 +113,7 @@ namespace MyRHApp
             Console.WriteLine("1. Default Context");
             Console.Write("Select an option: ");
             var option = Console.ReadLine();
-            _currentContext = new Context { Id = 1, Name = "Default Context" }; // Simplified context selection for example
+            _currentContext = new Context { Id = 1, Name = "Default Context" }; // Context selection for example
         }
 
         private static void ShowHROptions()
@@ -220,8 +225,20 @@ namespace MyRHApp
             Console.Write("Hire Date (yyyy-mm-dd): ");
             employee.HireDate = DateTime.Parse(Console.ReadLine());
 
+            // Create employee
             _employeeService.CreateEmployee(employee);
-            Console.WriteLine("Employee added successfully!");
+
+            // Create user
+            var user = new User
+            {
+                Username = $"{employee.FirstName.ToLower()}.{employee.LastName.ToLower()}",
+                Password = "password", // Default password
+                EmployeeId = employee.Id
+            };
+
+            _userService.Register(user, employee);
+
+            Console.WriteLine("Employee and user added successfully!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }

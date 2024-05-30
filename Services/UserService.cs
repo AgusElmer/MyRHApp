@@ -11,12 +11,14 @@ namespace MyRHApp.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IUserRoleContextRepository _userRoleContextRepository;
+        private readonly IEmployeeService _employeeService;
         private readonly IRoleService _roleService;
 
-        public UserService(IUserRepository userRepository, IUserRoleContextRepository userRoleContextRepository, IRoleService roleService)
+        public UserService(IUserRepository userRepository, IUserRoleContextRepository userRoleContextRepository, IEmployeeService employeeService, IRoleService roleService)
         {
             _userRepository = userRepository;
             _userRoleContextRepository = userRoleContextRepository;
+            _employeeService = employeeService;
             _roleService = roleService;
         }
 
@@ -30,8 +32,10 @@ namespace MyRHApp.Services
             return null;
         }
 
-        public void Register(User user)
+        public void Register(User user, Employee employee)
         {
+            _employeeService.CreateEmployee(employee);
+            user.EmployeeId = employee.Id;
             _userRepository.Add(user);
         }
 
@@ -44,7 +48,6 @@ namespace MyRHApp.Services
                 ContextId = contextId
             };
             _userRoleContextRepository.Add(userRoleContext);
-            Console.WriteLine($"Assigned RoleId {roleId} to UserId {userId} in ContextId {contextId}");
         }
 
         public List<Role> GetRolesForUserInContext(int userId, int contextId)
@@ -52,7 +55,6 @@ namespace MyRHApp.Services
             var userRoleContexts = _userRoleContextRepository.GetByUserId(userId)
                                                               .Where(urc => urc.ContextId == contextId)
                                                               .ToList();
-            Console.WriteLine($"UserRoleContexts count for userId {userId} and contextId {contextId}: {userRoleContexts.Count}");
 
             var roles = new List<Role>();
             foreach (var urc in userRoleContexts)
@@ -63,8 +65,8 @@ namespace MyRHApp.Services
                     roles.Add(role);
                 }
             }
-            Console.WriteLine($"Roles count for userId {userId} in ContextId {contextId}: {roles.Count}");
             return roles;
         }
     }
+
 }
