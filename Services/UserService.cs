@@ -35,6 +35,16 @@ namespace MyRHApp.Services
         public void Register(User user, Employee employee)
         {
             _employeeService.CreateEmployee(employee);
+            int id = 0;
+            if (employee.Id == 0) {
+                List<User> list = _userRepository.GetAll();
+                if (list.Count() == 0){
+                    id = 1;
+                } else {
+                    id = list.Max(x => x.Id);
+                    employee.Id = id+1;
+                }
+            }
             user.EmployeeId = employee.Id;
             _userRepository.Add(user);
         }
