@@ -226,7 +226,7 @@ namespace MyRHApp
             employee.HireDate = DateTime.Parse(Console.ReadLine());
 
             // Create employee
-            _employeeService.CreateEmployee(employee);
+            // _employeeService.CreateEmployee(employee);
 
             // Create user
             var user = new User
