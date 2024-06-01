@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using MyRHApp.Models;
-using MyRHApp.Services;
 using MyRHApp.Services.Interfaces;
 using MyRHApp.Utilities;
 using MyRHApp.DataAccess.Interfaces;
 using MyRHApp.DataAccess.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using MyRHApp.Services.Implementations;
 
 namespace MyRHApp
 {

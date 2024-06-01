@@ -16,4 +16,9 @@ namespace MyRHApp.Models
         public List<ExtraHour> ExtraHours { get; set; } = new List<ExtraHour>();
         public List<VacationRequest> VacationRequests { get; set; } = new List<VacationRequest>();
     }
+    public enum UserRole
+    {
+        HR = 1,
+        Employee = 2
+    }
 }

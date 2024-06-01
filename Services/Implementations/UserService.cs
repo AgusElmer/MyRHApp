@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MyRHApp.Services
+namespace MyRHApp.Services.Implementations
 {
     public class UserService : IUserService
     {
@@ -32,21 +32,27 @@ namespace MyRHApp.Services
             return null;
         }
 
-        public void Register(User user, Employee employee)
+        public User Register(User user, Employee employee)
         {
-            _employeeService.CreateEmployee(employee);
             int id = 0;
-            if (employee.Id == 0) {
+            if (employee.Id == 0)
+            {
                 List<User> list = _userRepository.GetAll();
-                if (list.Count() == 0){
+                if (list.Count() == 0)
+                {
                     id = 1;
-                } else {
+                }
+                else
+                {
                     id = list.Max(x => x.Id);
-                    employee.Id = id+1;
+                    employee.Id = id + 1;
                 }
             }
+            _employeeService.CreateEmployee(employee);
             user.EmployeeId = employee.Id;
+            user.Id = employee.Id;
             _userRepository.Add(user);
+            return user;
         }
 
         public void AssignRoleToUser(int userId, int roleId, int contextId)
