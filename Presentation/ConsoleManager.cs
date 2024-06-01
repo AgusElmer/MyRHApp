@@ -1,29 +1,29 @@
 ﻿using System;
 using System.Linq;
 using MyRHApp.Models;
-using MyRHApp.Services;
 using MyRHApp.Services.Interfaces;
-using MyRHApp.Utilities;
-using MyRHApp.DataAccess.Interfaces;
-using MyRHApp.DataAccess.Repositories;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MyRHApp
 {
-    class Program
+    public class ConsoleManager
     {
-        private static IUserService _userService;
-        private static IEmployeeService _employeeService;
-        private static IRoleService _roleService;
-        private static User _currentUser;
-        private static Context _currentContext;
+        private IUserService _userService;
+        private IEmployeeService _employeeService;
+        private IRoleService _roleService;
+        private User _currentUser;
+        private Context _currentContext;
 
-        static void Main(string[] args)
+        public ConsoleManager(IUserService userService, IEmployeeService employeeService, IRoleService roleService)
         {
-            ConfigureServices();
+            _userService = userService;
+            _employeeService = employeeService;
+            _roleService = roleService;
+        }
+
+        public void Start()
+        {
             SeedData();
             Login();
-
             while (_currentUser != null)
             {
                 Console.Clear();
@@ -41,53 +41,7 @@ namespace MyRHApp
             }
         }
 
-        private static void ConfigureServices()
-        {
-            var serviceProvider = new ServiceCollection()
-            .AddSingleton<IUserRepository, UserRepository>()
-            .AddSingleton<IUserRoleContextRepository, UserRoleContextRepository>()
-            .AddSingleton<IRoleRepository, RoleRepository>()
-            .AddSingleton<IEmployeeRepository, EmployeeRepository>()
-            .AddSingleton<IContextRepository, ContextRepository>()
-            .AddSingleton<IUserService, UserService>()
-            .AddSingleton<IRoleService, RoleService>()
-            .AddSingleton<IEmployeeService, EmployeeService>()
-            .BuildServiceProvider();
-
-            _userService = serviceProvider.GetService<IUserService>();
-            _employeeService = serviceProvider.GetService<IEmployeeService>();
-            _roleService = serviceProvider.GetService<IRoleService>();
-        }
-
-        private static void SeedData()
-        {
-            // Create roles
-            var hrRole = new Role { Id = 1, Name = "HR" };
-            var employeeRole = new Role { Id = 2, Name = "Employee" };
-
-            // Add roles to repository through service
-            _roleService.CreateRole(hrRole);
-            _roleService.CreateRole(employeeRole);
-
-            // Create employees
-            var hrEmployee = new HREmployee { Id = 1, FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
-            var generalEmployee = new GeneralEmployee { Id = 2, FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
-
-            // Create users with EmployeeId
-            var hrUser = new User { Id = 1, Username = "hruser", Password = "password", EmployeeId = hrEmployee.Id };
-            var generalUser = new User { Id = 2, Username = "empuser", Password = "password", EmployeeId = generalEmployee.Id };
-
-            _userService.Register(hrUser, hrEmployee);
-            _userService.Register(generalUser, generalEmployee);
-
-            // Assign roles to users in context 1
-            _userService.AssignRoleToUser(hrUser.Id, hrRole.Id, 1);
-            _userService.AssignRoleToUser(generalUser.Id, employeeRole.Id, 1);
-
-            Console.WriteLine("Seed data created successfully.");
-        }
-
-        private static void Login()
+        private void Login()
         {
             while (_currentUser == null)
             {
@@ -107,16 +61,12 @@ namespace MyRHApp
             }
         }
 
-        private static void SetContext()
+        private void SetContext()
         {
-            Console.WriteLine("Select Context:");
-            Console.WriteLine("1. Default Context");
-            Console.Write("Select an option: ");
-            var option = Console.ReadLine();
             _currentContext = new Context { Id = 1, Name = "Default Context" }; // Context selection for example
         }
 
-        private static void ShowHROptions()
+        private void ShowHROptions()
         {
             Console.WriteLine("1. List Employees");
             Console.WriteLine("2. Add Employee");
@@ -147,7 +97,7 @@ namespace MyRHApp
             }
         }
 
-        private static void ShowEmployeeOptions()
+        private void ShowEmployeeOptions()
         {
             Console.WriteLine("1. View Profile");
             Console.WriteLine("2. Submit Absence");
@@ -178,7 +128,7 @@ namespace MyRHApp
             }
         }
 
-        private static void ListEmployees()
+        private void ListEmployees()
         {
             Console.Clear();
             var employees = _employeeService.GetEmployees();
@@ -190,8 +140,10 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void AddEmployee()
+        private void AddEmployee()
         {
+            int role;
+
             Console.Clear();
             Console.WriteLine("Select Employee Type:");
             Console.WriteLine("1. General Employee");
@@ -204,10 +156,12 @@ namespace MyRHApp
             if (option == "1")
             {
                 employee = new GeneralEmployee();
+                role = 2;
             }
             else if (option == "2")
             {
                 employee = new HREmployee();
+                role = 1;
             }
             else
             {
@@ -225,10 +179,6 @@ namespace MyRHApp
             Console.Write("Hire Date (yyyy-mm-dd): ");
             employee.HireDate = DateTime.Parse(Console.ReadLine());
 
-            // Create employee
-            // _employeeService.CreateEmployee(employee);
-
-            // Create user
             var user = new User
             {
                 Username = $"{employee.FirstName.ToLower()}.{employee.LastName.ToLower()}",
@@ -237,13 +187,14 @@ namespace MyRHApp
             };
 
             _userService.Register(user, employee);
+            _userService.AssignRoleToUser(user.EmployeeId, role, 1);
 
             Console.WriteLine("Employee and user added successfully!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 
-        private static void UpdateEmployee()
+        private void UpdateEmployee()
         {
             Console.Clear();
             Console.Write("Employee ID: ");
@@ -270,7 +221,7 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void DeleteEmployee()
+        private void DeleteEmployee()
         {
             Console.Clear();
             Console.Write("Employee ID: ");
@@ -281,7 +232,7 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void ViewProfile()
+        private void ViewProfile()
         {
             Console.Clear();
             var employee = _employeeService.GetEmployeeById(_currentUser.Id);
@@ -295,7 +246,7 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void SubmitAbsence()
+        private void SubmitAbsence()
         {
             Console.Clear();
             var absence = new Absence();
@@ -311,7 +262,7 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void SubmitExtraHours()
+        private void SubmitExtraHours()
         {
             Console.Clear();
             var extraHour = new ExtraHour();
@@ -327,7 +278,7 @@ namespace MyRHApp
             Console.ReadKey();
         }
 
-        private static void RequestVacation()
+        private void RequestVacation()
         {
             Console.Clear();
             var vacationRequest = new VacationRequest();
@@ -342,6 +293,34 @@ namespace MyRHApp
             Console.WriteLine("Vacation request submitted successfully!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
+        }
+
+        private void SeedData()
+        {
+            // Create roles
+            var hrRole = new Role { Id = 1, Name = "HR" };
+            var employeeRole = new Role { Id = 2, Name = "Employee" };
+
+            // Add roles to repository through service
+            _roleService.CreateRole(hrRole);
+            _roleService.CreateRole(employeeRole);
+
+            // Create employees
+            var hrEmployee = new HREmployee { Id = 1, FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
+            var generalEmployee = new GeneralEmployee { Id = 2, FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
+
+            // Create users with EmployeeId
+            var hrUser = new User { Id = 1, Username = "hruser", Password = "password", EmployeeId = hrEmployee.Id };
+            var generalUser = new User { Id = 2, Username = "empuser", Password = "password", EmployeeId = generalEmployee.Id };
+
+            _userService.Register(hrUser, hrEmployee);
+            _userService.Register(generalUser, generalEmployee);
+
+            // Assign roles to users in context 1
+            _userService.AssignRoleToUser(hrUser.Id, hrRole.Id, 1);
+            _userService.AssignRoleToUser(generalUser.Id, employeeRole.Id, 1);
+
+            Console.WriteLine("Seed data created successfully.");
         }
     }
 }
