@@ -2,6 +2,7 @@
 using System.Linq;
 using MyRHApp.Models;
 using MyRHApp.Services.Interfaces;
+using MyRHApp.Utilities;
 
 namespace MyRHApp
 {
@@ -73,26 +74,28 @@ namespace MyRHApp
             Console.WriteLine("3. Update Employee");
             Console.WriteLine("4. Delete Employee");
             Console.WriteLine("5. Logout");
-            Console.Write("Select an option: ");
-            var option = Console.ReadLine();
+            int option = InputValidator.GetValidatedInt("Select an option: ");
 
             switch (option)
             {
-                case "1":
+                case 1:
                     ListEmployees();
                     break;
-                case "2":
+                case 2:
                     AddEmployee();
                     break;
-                case "3":
+                case 3:
                     UpdateEmployee();
                     break;
-                case "4":
+                case 4:
                     DeleteEmployee();
                     break;
-                case "5":
+                case 5:
                     _currentUser = null;
                     Login();
+                    break;
+                default:
+                    Console.WriteLine("Invalid option selected.");
                     break;
             }
         }
@@ -104,26 +107,28 @@ namespace MyRHApp
             Console.WriteLine("3. Submit Extra Hours");
             Console.WriteLine("4. Request Vacation");
             Console.WriteLine("5. Logout");
-            Console.Write("Select an option: ");
-            var option = Console.ReadLine();
+            int option = InputValidator.GetValidatedInt("Select an option: ");
 
             switch (option)
             {
-                case "1":
+                case 1:
                     ViewProfile();
                     break;
-                case "2":
+                case 2:
                     SubmitAbsence();
                     break;
-                case "3":
+                case 3:
                     SubmitExtraHours();
                     break;
-                case "4":
+                case 4:
                     RequestVacation();
                     break;
-                case "5":
+                case 5:
                     _currentUser = null;
                     Login();
+                    break;
+                default:
+                    Console.WriteLine("Invalid option selected.");
                     break;
             }
         }
@@ -142,26 +147,24 @@ namespace MyRHApp
 
         private void AddEmployee()
         {
-            int role;
-
             Console.Clear();
             Console.WriteLine("Select Employee Type:");
             Console.WriteLine("1. General Employee");
             Console.WriteLine("2. HR Employee");
-            Console.Write("Select an option: ");
-            var option = Console.ReadLine();
+            int option = InputValidator.GetValidatedInt("Select an option: ");
 
             Employee employee;
+            int userRole;
 
-            if (option == "1")
+            if (option == 1)
             {
-                employee = new GeneralEmployee();
-                role = 2;
+                employee = new Employee();
+                userRole = (int)UserRole.Employee;
             }
-            else if (option == "2")
+            else if (option == 2)
             {
-                employee = new HREmployee();
-                role = 1;
+                employee = new Employee();
+                userRole = (int)UserRole.HR;
             }
             else
             {
@@ -170,14 +173,10 @@ namespace MyRHApp
                 return;
             }
 
-            Console.Write("First Name: ");
-            employee.FirstName = Console.ReadLine();
-            Console.Write("Last Name: ");
-            employee.LastName = Console.ReadLine();
-            Console.Write("Position: ");
-            employee.Position = Console.ReadLine();
-            Console.Write("Hire Date (yyyy-mm-dd): ");
-            employee.HireDate = DateTime.Parse(Console.ReadLine());
+            employee.FirstName = InputValidator.GetNonEmptyString("First Name: ");
+            employee.LastName = InputValidator.GetNonEmptyString("Last Name: ");
+            employee.Position = InputValidator.GetNonEmptyString("Position: ");
+            employee.HireDate = InputValidator.GetValidatedDate("Hire Date (yyyy-mm-dd): ");
 
             var user = new User
             {
@@ -186,8 +185,8 @@ namespace MyRHApp
                 EmployeeId = employee.Id
             };
 
-            _userService.Register(user, employee);
-            _userService.AssignRoleToUser(user.EmployeeId, role, 1);
+            user = _userService.Register(user, employee);
+            _userService.AssignRoleToUser(user.Id, userRole, 1);
 
             Console.WriteLine("Employee and user added successfully!");
             Console.WriteLine("Press any key to continue...");
@@ -197,8 +196,7 @@ namespace MyRHApp
         private void UpdateEmployee()
         {
             Console.Clear();
-            Console.Write("Employee ID: ");
-            int id = int.Parse(Console.ReadLine());
+            int id = InputValidator.GetValidatedInt("Employee ID: ");
             var employee = _employeeService.GetEmployeeById(id);
             if (employee == null)
             {
@@ -207,14 +205,10 @@ namespace MyRHApp
                 Console.ReadKey();
                 return;
             }
-            Console.Write("First Name: ");
-            employee.FirstName = Console.ReadLine();
-            Console.Write("Last Name: ");
-            employee.LastName = Console.ReadLine();
-            Console.Write("Position: ");
-            employee.Position = Console.ReadLine();
-            Console.Write("Hire Date (yyyy-mm-dd): ");
-            employee.HireDate = DateTime.Parse(Console.ReadLine());
+            employee.FirstName = InputValidator.GetNonEmptyString("First Name: ");
+            employee.LastName = InputValidator.GetNonEmptyString("Last Name: ");
+            employee.Position = InputValidator.GetNonEmptyString("Position: ");
+            employee.HireDate = InputValidator.GetValidatedDate("Hire Date (yyyy-mm-dd): ");
             _employeeService.UpdateEmployee(employee);
             Console.WriteLine("Employee updated successfully!");
             Console.WriteLine("Press any key to continue...");
@@ -224,8 +218,7 @@ namespace MyRHApp
         private void DeleteEmployee()
         {
             Console.Clear();
-            Console.Write("Employee ID: ");
-            int id = int.Parse(Console.ReadLine());
+            int id = InputValidator.GetValidatedInt("Employee ID: ");
             _employeeService.DeleteEmployee(id);
             Console.WriteLine("Employee deleted successfully!");
             Console.WriteLine("Press any key to continue...");
@@ -249,11 +242,11 @@ namespace MyRHApp
         private void SubmitAbsence()
         {
             Console.Clear();
-            var absence = new Absence();
-            Console.Write("Date (yyyy-mm-dd): ");
-            absence.Date = DateTime.Parse(Console.ReadLine());
-            Console.Write("Reason: ");
-            absence.Reason = Console.ReadLine();
+            var absence = new Absence
+            {
+                Date = InputValidator.GetValidatedDate("Date (yyyy-mm-dd): "),
+                Reason = InputValidator.GetNonEmptyString("Reason: ")
+            };
             var employee = _employeeService.GetEmployeeById(_currentUser.Id);
             employee.Absences.Add(absence);
             _employeeService.UpdateEmployee(employee);
@@ -265,11 +258,11 @@ namespace MyRHApp
         private void SubmitExtraHours()
         {
             Console.Clear();
-            var extraHour = new ExtraHour();
-            Console.Write("Date (yyyy-mm-dd): ");
-            extraHour.Date = DateTime.Parse(Console.ReadLine());
-            Console.Write("Hours: ");
-            extraHour.Hours = int.Parse(Console.ReadLine());
+            var extraHour = new ExtraHour
+            {
+                Date = InputValidator.GetValidatedDate("Date (yyyy-mm-dd): "),
+                Hours = InputValidator.GetValidatedInt("Hours: ")
+            };
             var employee = _employeeService.GetEmployeeById(_currentUser.Id);
             employee.ExtraHours.Add(extraHour);
             _employeeService.UpdateEmployee(employee);
@@ -281,12 +274,12 @@ namespace MyRHApp
         private void RequestVacation()
         {
             Console.Clear();
-            var vacationRequest = new VacationRequest();
-            Console.Write("Start Date (yyyy-mm-dd): ");
-            vacationRequest.StartDate = DateTime.Parse(Console.ReadLine());
-            Console.Write("End Date (yyyy-mm-dd): ");
-            vacationRequest.EndDate = DateTime.Parse(Console.ReadLine());
-            vacationRequest.IsApproved = false;
+            var vacationRequest = new VacationRequest
+            {
+                StartDate = InputValidator.GetValidatedDate("Start Date (yyyy-mm-dd): "),
+                EndDate = InputValidator.GetValidatedDate("End Date (yyyy-mm-dd): "),
+                IsApproved = false
+            };
             var employee = _employeeService.GetEmployeeById(_currentUser.Id);
             employee.VacationRequests.Add(vacationRequest);
             _employeeService.UpdateEmployee(employee);
@@ -297,26 +290,21 @@ namespace MyRHApp
 
         private void SeedData()
         {
-            // Create roles
-            var hrRole = new Role { Id = 1, Name = "HR" };
-            var employeeRole = new Role { Id = 2, Name = "Employee" };
+            var hrRole = new Role { Id = (int)UserRole.HR, Name = "HR" };
+            var employeeRole = new Role { Id = (int)UserRole.Employee, Name = "Employee" };
 
-            // Add roles to repository through service
             _roleService.CreateRole(hrRole);
             _roleService.CreateRole(employeeRole);
 
-            // Create employees
-            var hrEmployee = new HREmployee { Id = 1, FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
-            var generalEmployee = new GeneralEmployee { Id = 2, FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
+            var hrEmployee = new Employee { Id = 1, FirstName = "HR", LastName = "User", Position = "HR Manager", HireDate = DateTime.Now };
+            var generalEmployee = new Employee { Id = 2, FirstName = "Employee", LastName = "User", Position = "Developer", HireDate = DateTime.Now };
 
-            // Create users with EmployeeId
             var hrUser = new User { Id = 1, Username = "hruser", Password = "password", EmployeeId = hrEmployee.Id };
             var generalUser = new User { Id = 2, Username = "empuser", Password = "password", EmployeeId = generalEmployee.Id };
 
             _userService.Register(hrUser, hrEmployee);
             _userService.Register(generalUser, generalEmployee);
 
-            // Assign roles to users in context 1
             _userService.AssignRoleToUser(hrUser.Id, hrRole.Id, 1);
             _userService.AssignRoleToUser(generalUser.Id, employeeRole.Id, 1);
 

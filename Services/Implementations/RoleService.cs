@@ -3,7 +3,7 @@ using MyRHApp.Models;
 using MyRHApp.Services.Interfaces;
 using System.Collections.Generic;
 
-namespace MyRHApp.Services
+namespace MyRHApp.Services.Implementations
 {
     public class RoleService : IRoleService
     {
