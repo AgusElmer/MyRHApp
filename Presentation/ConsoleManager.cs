@@ -64,7 +64,7 @@ namespace MyRHApp
 
         private void SetContext()
         {
-            _currentContext = new Context { Id = 1, Name = "Default Context" }; // Context selection for example
+            _currentContext = new Context { Id = 1, Name = "Default Context" };
         }
 
         private void ShowHROptions()
@@ -180,7 +180,7 @@ namespace MyRHApp
 
             var user = new User
             {
-                Username = $"{employee.FirstName.ToLower()}.{employee.LastName.ToLower()}",
+                Username = $"{employee.FirstName.ToLower()}.{employee.LastName.ToLower()}", //Default username
                 Password = "password", // Default password
                 EmployeeId = employee.Id
             };
